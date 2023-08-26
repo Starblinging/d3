@@ -1,0 +1,185 @@
+<style>
+  /* 定义字体和字号 */
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 14px; /* 调整为你想要的字号 */
+  }
+  
+  /* 也可以为树图容器和其他元素定义样式 */
+  #tree-container {
+    /* 添加树图容器的样式 */
+  }
+  
+  #year-selector {
+    /* 添加年份选择器的样式 */
+  }
+  
+  /* 其他样式定义 */
+</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D3.js Tree Chart with Circle Endings</title>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<style>
+  /* 可以在这里定义一些样式 */
+</style>
+</head>
+<body>
+<div id="tree-container"></div>
+<script>
+// 示例数据，根据你的实际数据进行修改
+const data = {
+  name: "     学科",
+  children: [
+    {
+      name: "arts",
+        children: [
+          { name: "Fine Arts & Architecture", value:16231},
+          { name: "Performing Arts", value: 12184},
+        ]
+      },
+      {
+        name: "Biology",
+        children: [
+          { name: "Agricult & Food Science", value: 155555 },
+          { name: "Botany", value: 135018 },
+          { name: "Dairy & Animal Science", value: 35593 },
+          { name: "Ecology", value: 34234 },
+          { name: "Entomology", value: 41562 },
+          { name: "General Biology", value: 12331 },
+          { name: "Marine Biology & Hydrobiology", value: 48181 },
+          { name: "Miscellaneous Biology", value: 7217 },
+          { name: "Miscellaneous Zoology", value: 17341 }
+        ]
+      },
+      {
+        name: "Chemistry",
+        children: [
+          { name: "Analytical Chemistry", value: 76219 },
+          { name: "Applied Chemistry", value: 23371 },
+          { name: "General Chemistry", value: 173720 },
+          { name: "Inorganic & Nuclear Chemistry", value: 42035},
+          { name: "Entomology", value: 41562 },
+          { name: "Organic Chemistry", value: 87809 },
+          { name: "Physical Chemistry", value: 150006 },
+          { name: "Polymers", value: 54697 },
+        ]
+      },
+       {
+        name: "Clinical Medicine",
+        children: [
+          { name: "Addictive Diseases", value: 8962 },
+          { name: "Allergy", value: 5875 },
+          { name: "Anesthesiology", value: 15163 },
+          { name: "Arthritis & Rheumatology", value: 11103},
+          { name: "Cancer", value: 69104},
+          { name: "Dentistry", value: 30670 },
+          { name: "Dermatology & Venerial Disease", value: 31361 },
+          { name: "Endocrinology", value: 43718 },
+          { name: "Environmental & Occupational Health", value: 20750 },
+          { name: "Fertility", value: 12438 },
+          { name: "Gastroenterology", value: 15163 },
+          { name: "General & Internal Medicine", value: 267976},
+          { name: "Geriatrics", value: 7484},
+          { name: "Hematology", value: 28302 },
+          { name: "Immunology", value: 95424 },
+          { name: "Miscellaneous Clinical Medicine", value: 11509 },
+        ]
+      },
+      {
+        name: "Mathematics",
+        children: [
+          { name: "Applied Mathematics", value: 24850 },
+          { name: "General Mathematics", value: 77853 },
+          { name: "Miscellaneous Mathematics", value: 5963 },
+          { name: "Probability & Statistics", value: 26363},
+        ]
+      },
+      {
+        name: "Physics",
+        children: [
+          { name: "Acoustics", value: 16076 },
+          { name: "Applied Physics", value:160846 },
+          { name: "Chemical Physics", value: 66533 },
+          { name: "Fluids & Plasmas", value: 13897},
+          { name: "General Physics", value: 207767},
+          { name: "Miscellaneous Physics", value: 2957 },
+          { name: "Nuclear & Particle Physics", value: 65528 },
+          { name: "Optics", value: 47412 },
+          { name: "Solid State Physicsh", value: 83866 },
+      ]
+    }
+  ]
+};
+
+// 创建一个树布局
+const treeLayout = d3.tree().size([600, 400]);
+
+// 创建一个树图容器
+const svg = d3.select("#tree-container").append("svg")
+  .attr("width", 1000)
+  .attr("height", 1000)
+  .append("g")
+  .attr("transform", "translate(50, 50)");
+
+// 为数据创建层次结构
+const root = d3.hierarchy(data);
+
+// 应用树布局并获取节点数据
+const treeData = treeLayout(root);
+
+// 创建颜色比例尺
+const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// 绘制连线和圆
+svg.selectAll(".link")
+  .data(treeData.links())
+  .enter().append("line")
+  .attr("class", "link")
+  .attr("x1", d => d.source.y)
+  .attr("y1", d => d.source.x)
+  .attr("x2", d => d.target.y)
+  .attr("y2", d => d.target.x)
+  .attr("stroke-width", 2) // 调整线的宽度
+  .attr("stroke", (d, i) => colorScale(i)); // 使用颜色比例尺设置颜色
+
+// 绘制节点和圆
+const nodes = svg.selectAll(".node")
+  .data(treeData.descendants())
+  .enter().append("g")
+  .attr("class", "node")
+  .attr("transform", d => `translate(${d.y},${d.x})`);
+
+nodes.append("circle")
+  .attr("r", 5);
+
+nodes.append("text")
+  .attr("dy", 5)
+  .attr("x", d => d.children ? -10 : 10)
+  .style("text-anchor", d => d.children ? "end" : "start")
+  .text(d => {
+    if (d.data.value !== undefined) {
+      return `${d.data.name} (${d.data.value})`;
+    }
+    return d.data.name;
+  });
+
+// 绘制圆圈末端
+svg.selectAll(".circle-end")
+  .data(treeData.links())
+  .enter().append("g")
+  .attr("class", "circle-end")
+  .append("circle")
+  .attr("cx", d => d.target.y)
+  .attr("cy", d => d.target.x)
+  .attr("r", d => d.target.data.value || 0)
+  .attr("fill", "none")
+  .attr("stroke", "black")
+  .attr("stroke-width", 2);
+
+</script>
+</body>
+</html>

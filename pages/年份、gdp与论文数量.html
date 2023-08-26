@@ -1,0 +1,101 @@
+     
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The relationship between China's GDP, Time of Year and Paper Count</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+
+<body>
+    <script>
+        //由于表格数据合并一直失败，所以直接选择枚举
+        const data = [{'year': 1990, 'Papers corr address': 5691, 'GDP': 360858000000.0}, {'year': 1991, 'Papers corr address': 5797, 'GDP': 383373000000.0}, {'year': 1992, 'Papers corr address': 6176, 'GDP': 426916000000.0}, {'year': 1993, 'Papers corr address': 6778, 'GDP': 444731000000.0}, {'year': 1994, 'Papers corr address': 7343, 'GDP': 564325000000.0}, {'year': 1995, 'Papers corr address': 8237, 'GDP': 734548000000.0}, {'year': 1996, 'Papers corr address': 8962, 'GDP': 863747000000.0}, {'year': 1997, 'Papers corr address': 10456, 'GDP': 961604000000.0}, {'year': 1998, 'Papers corr address': 15196, 'GDP': 1029040000000.0}, {'year': 1999, 'Papers corr address': 18882, 'GDP': 1094000000000.0}, {'year': 2000, 'Papers corr address': 24426, 'GDP': 1211350000000.0}, {'year': 2001, 'Papers corr address': 29148, 'GDP': 1339400000000.0}, {'year': 2002, 'Papers corr address': 33142, 'GDP': 1470550000000.0}, {'year': 2003, 'Papers corr address': 41177, 'GDP': 1660290000000.0}, {'year': 2004, 'Papers corr address': 52522, 'GDP': 1955350000000.0}, {'year': 2005, 'Papers corr address': 64502, 'GDP': 2285970000000.0}, {'year': 2006, 'Papers corr address': 77374, 'GDP': 2752130000000.0}, {'year': 2007, 'Papers corr address': 85896, 'GDP': 3550340000000.0}, {'year': 2008, 'Papers corr address': 97941, 'GDP': 4594310000000.0}, {'year': 2009, 'Papers corr address': 113216, 'GDP': 5101700000000.0}, {'year': 2010, 'Papers corr address': 123976, 'GDP': 6087160000000.0}, {'year': 2011, 'Papers corr address': 145196, 'GDP': 7551500000000.0}, {'year': 2012, 'Papers corr address': 169652, 'GDP': 8532230000000.0}, {'year': 2013, 'Papers corr address': 200187, 'GDP': 9570410000000.0}, {'year': 2014, 'Papers corr address': 231465, 'GDP': 10475700000000.0}, {'year': 2015, 'Papers corr address': 259884, 'GDP': 11061600000000.0}, {'year': 2016, 'Papers corr address': 284403, 'GDP': 11233300000000.0}, {'year': 2017, 'Papers corr address': 308696, 'GDP': 12310400000000.0}];
+
+        const width = 800;
+        const height = 500;
+        const margin = { top: 50, right: 50, bottom: 50, left: 100 };
+
+        const svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", -20)
+            .style("text-anchor", "middle")
+            .style("font-size", "16px")
+            .text("中国论文数量与GDP、年份的关系");
+
+        const xScale = d3.scaleLinear()
+            .domain([d3.min(data, d => d.year), d3.max(data, d => d.year)])
+            .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d['Papers corr address'])])
+            .range([height, 0]);
+
+        const yAxis = d3.axisLeft(yScale)
+            .ticks(10)
+            .tickFormat(d => {
+                if (d >= 1e6) return d / 1e6 + "M";
+                else if (d >= 1e3) return d / 1e3 + "k";
+                else return d;
+            });
+
+        svg.append("g")
+            .call(yAxis);
+
+        const rScale = d3.scaleSqrt()
+            .domain([0, d3.max(data, d => d.GDP)])
+            .range([5, 30]);
+
+        svg.selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("cx", d => xScale(d.year))
+            .attr("cy", d => yScale(d['Papers corr address']))
+            .attr("r", d => rScale(d.GDP))
+            .attr("fill", "steelblue")
+            .attr("opacity", 0.7)
+            .on("mouseover", function(d) {      
+                d3.select(this).attr("r", d => rScale(d.GDP) + 3);
+                svg.append("text")
+                    .attr("id", "tooltip")
+                    .attr("x", xScale(d.year))
+                    .attr("y", yScale(d['Papers corr address']) - 10)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "14px")
+                    .style("fill", "black")
+                    .text(d['Papers corr address']);
+            })
+            .on("mouseout", function(d) {       
+                d3.select(this).attr("r", d => rScale(d.GDP));
+                d3.select("#tooltip").remove();
+            });
+
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(xScale).tickFormat(d3.format("d")));
+
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom )
+            .style("text-anchor", "middle")
+            .text("Year");
+
+        svg.append("text")
+            .attr("x", -(height / 2))
+            .attr("y", -margin.left)
+            .attr("transform", "rotate(-90)")
+            .style("text-anchor", "middle")
+            .text("Number of Papers");
+    </script>
+</body>
+
+</html>

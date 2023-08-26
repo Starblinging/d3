@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>各国Health类论文数量折线图</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<style type="text/css">
+.axis path,
+.axis line{
+fill:none;
+stroke:black;
+/* 线是光滑的 */
+shape-rendering:crispEdges; 
+}
+.label {
+font-size: 12px;
+fill: black;
+text-anchor: end;
+}
+.line {
+fill: none;
+stroke-width: 3px;
+}
+.line:hover {
+stroke-width: 6px;
+}
+.tooltip {
+position: absolute;
+text-align: center;
+width: auto;
+height: auto;
+padding: 5px;
+font-size: 12px;
+background-color: white;
+border: 1px solid black;
+pointer-events: none;
+opacity: 0;
+transition: opacity 0.2s;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+    /* 线是光滑的 */
+    stroke-width: 2px; /* 设置坐标轴线的粗细 */
+}
+
+.label {
+    font-size: 12px;
+    fill: black;
+    text-anchor: end;
+    font-weight: bold; /* 设置数字的粗细 */
+}
+
+</style>
+<body>
+<button onclick="showData('China')">China</button>
+<button onclick="showData('UK')">UK</button>
+<button onclick="showData('Germany')">Germany</button>
+<button onclick="showData('Netherland')">Netherland</button>
+<div id="chart"></div>
+<script>
+//定义画布的长和宽
+var width = 600;
+var height = 600;
+//定义画布
+var svg=d3.select("#chart")
+.append("svg")//添加画布
+.attr("width",width)
+.attr("height",height);
+
+    //留白
+    var padding={left:50,right:50,top:50,bottom:50};
+    //数据
+    var database= [{
+        country:"China",
+        gdp:[[0,88],[2,155],[4,208],[6,255],[8,336],[10,419]]
+    },
+        {
+            country:"UK",
+            gdp:[[0,1439],[2,1343],[4,1514],[6,1779],[8,2124],[10,2246]]
+        },
+        {
+            country:"Germany",
+            gdp:[[0,279],[2,302],[4,350],[6,372],[8,712],[10,799]]
+        },
+        {
+            country:"Netherland",
+            gdp:[[0,240],[2,226],[4,301],[6,437],[8,548],[10,750]]
+        }
+    ];
+
+    var xScale = d3.scaleLinear()
+        .domain([0,10])
+        .range([0,width-padding.left-padding.right]);
+    var yScale = d3.scaleLinear()
+        .domain([0,2300])
+        .range([height-padding.top-padding.bottom,0]);
+
+    //x轴
+    var xAxis = d3.axisBottom(xScale).ticks(5).tickFormat(function(d) { return 2000 + d; });
+    var yAxis = d3.axisLeft(yScale);
+
+    var gdpmax=0;
+    for(var i=0;i<database.length;i++){
+        var currGdp = d3.max(database[i].gdp,function(d){
+            return d[1];
+        });
+        if(currGdp>gdpmax)
+            gdpmax = currGdp;
+    }
+
+    var linePath = d3.line()
+        .x(function(d){return xScale(d[0]);})
+        .y(function(d){return yScale(d[1]);});
+
+    var colors = [d3.rgb(0,0,255),d3.rgb(0,255,0),d3.rgb(255,0,0),d3.rgb(255,255,0)];
+
+    var lines = svg.selectAll("path.line")
+        .data(database)
+        .enter()
+        .append("path")
+        .attr("class", "line")
+        .attr("transform","translate(" +padding.left +","+padding.top +")")
+        .attr("d",function(d){
+            return linePath(d.gdp);
+        })
+        .attr("fill","none")
+        .attr("stroke-width",3)
+        .attr("stroke",function(d,i){
+            return colors[i%colors.length];
+        })
+        .on("mouseover", function() {
+            d3.select(this).attr("stroke-width", 6);
+        })
+        .on("mouseout", function() {
+            d3.select(this).attr("stroke-width", 3);
+        });
+var datapoints = svg.selectAll("circle.datapoint")
+    .data(database)
+    .enter()
+    .selectAll("circle")
+    .data(function(d) {
+        return d.gdp;
+    })
+    .enter()
+    .append("circle")
+    .attr("class", "datapoint")
+    .attr("cx", function(d) {
+        return xScale(d[0]) + padding.left;
+    })
+    .attr("cy", function(d) {
+        return yScale(d[1]) + padding.top;
+    })
+    .attr("r", 3)
+    .attr("fill", function(d, i, j) {
+        return colors[j];
+    });
+    svg.selectAll("text.label")
+        .data(database)
+        .enter()
+        .append("text")
+        .attr("class", "label")
+        .attr("transform", function(d) {
+            var lastPoint = d.gdp[d.gdp.length - 1];
+            return "translate(" + (xScale(lastPoint[0]) + padding.left - 5) + "," + (yScale(lastPoint[1]) + padding.top - 5) + ")";
+        })
+        .text(function(d) {
+            return d.country;
+        });
+
+    svg.append("text")
+        .attr("x", (width / 2))
+        .attr("y", padding.top / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "20px")
+        .text("各国Health类论文数量折线图");
+
+   
+
+
+    svg.append("g")
+        .attr("class","axis")
+        .attr("transform","translate("+padding.left+","+(height-padding.bottom)+")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class","axis")
+        .attr("transform","translate("+padding.left+","+padding.top+")")
+        .call(yAxis);
+        
+    var tooltip = svg.append("text")
+        .attr("class", "tooltip")
+        .attr("x", width / 2)
+        .attr("y", height - (padding.bottom / 2))
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("opacity", 0);
+        
+    function showData(country) {
+        var data = database.find(function(d) {
+            return d.country === country;
+        });
+        
+        svg.selectAll("path.line")
+
+            .data([data])
+            .transition()
+            .duration(500)
+            .attr("d", function(d) {
+                return linePath(d.gdp);
+            });
+            
+        svg.selectAll("text.label")
+            .data([data])
+            .text(function(d) {
+                return d.country;
+            });
+            
+        tooltip.text("当前国家: " + country)
+            .style("opacity", 1);
+    }
+
+
+</script>
+</body>
+</html>

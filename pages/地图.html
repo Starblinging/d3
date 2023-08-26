@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDP Visualization on AMap</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=49da5d8d12902635b4f428e2022765c4"></script>
+    <style>
+        #container {
+            width: 60%;
+            height: 800px;
+        }
+    #legend {
+            position: absolute;
+            top: 20px;
+            left: 65%;
+        }
+        .legend-key {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            margin-top: 60px;
+        }
+        .chart-title {
+            text-align: left;
+            margin-left: 1% ; //试图调整标题位置但失败
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">2010年部分国家的GDP值</h1>
+        <div id="container"></div>
+        <div id="legend">
+            <div class="legend-title">2010年GDP值</div>
+    </div>
+    <script>
+        var map = new AMap.Map('container', {
+            resizeEnable: true,
+            center: [104.0, 37.5],
+            zoom: 2
+        });
+
+        var countryCoords = {
+            "Qatar": [51.31, 25.17],
+            "Saudi Arabia": [46.43, 24.4],
+            "Singapore": [103.49, 1.21],
+            "Syria": [36.18, 33.31],
+            "Thailand": [100.31, 13.45],
+            "Turkey": [32.51, 39.55],
+            "China": [116.24, 39.55],
+            "South Korea": [126.97, 37.57],
+            "Vietnam": [105.85, 21.02],
+            "Japan": [139.76, 35.68],
+            "United Kingdom": [-0.13, 51.51],
+            "Albania": [19.82, 41.33],
+            "Germany": [13.41, 52.52],
+            "Netherlands": [4.9, 52.37],
+            "Switzerland": [8.23, 46.81],
+            "Nigeria": [7.49, 9.06],
+            "Guinea": [-13.68, 9.95], 
+            "Angola": [13.23, -8.82],
+            "Dominican Republic": [-69.9, 18.42],
+            "Guatemala": [-90.37, 14.63],
+            "Honduras": [-87.05, 14.08],
+            "Jamaica": [-76.79, 18.11],
+            "Mexico": [-102.55, 23.63],
+            "Nicaragua": [-86.24, 12.87],
+            "Panama": [-79.52, 8.98],
+            "El Salvador": [-89.18, 13.69],
+            "United States": [-77.04, 38.9]//暴力输入坐标
+        };
+
+        d3.csv("GDP_WB.csv").then(function(data) {
+            var gdpMap = {};
+            data.forEach(function(d) {
+                gdpMap[d['Country Name']] = +d["2010"];
+            });
+
+            var minValue = d3.min(data, d => +d["2010"]);
+            var maxValue = d3.max(data, d => +d["2010"]);
+            var colorScale = d3.scaleLinear()
+                .domain([minValue, 500000000000, 1000000000000, 3000000000000, 6000000000000, maxValue])
+                .range(["#37EAF0", "#AFEF4E", "#EDE447", "#F7A94A", "#E04F51"]);//设置原点颜色
+            var infoWindow = new AMap.InfoWindow({ offset: new AMap.Pixel(0, -30) });
+            
+            Object.keys(countryCoords).forEach(function(country) {
+                var gdp = gdpMap[country];
+                if (gdp) {
+                    var color = colorScale(gdp);
+                    var marker = new AMap.Marker({
+                        position: countryCoords[country],
+                        title: country,
+                        map: map,
+                        icon: new AMap.Icon({
+                            size: new AMap.Size(24, 24),
+                            image: `data:image/svg+xml;base64,${btoa(
+                                `<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" fill="${color}" />
+                                </svg>`
+                            )}`
+                        })
+                    });
+                    marker.on('mouseover', function() {
+                        infoWindow.setContent(country + "\n" + "GDP: " + gdp.toLocaleString());
+                        infoWindow.open(map, marker.getPosition());
+                    });
+                    marker.on('mouseout', function() {
+                        infoWindow.close();
+                    });
+                }
+            });
+            var legendContainer = document.getElementById("legend");
+            var legendLabels = [
+                { color: "#37EAF0", label: "小于500B" },
+                { color: "#AFEF4E", label: "500B - 1T" },
+                { color: "#EDE447", label: "1T - 3T" },
+                { color: "#F7A94A", label: "3T - 6T" },
+                { color: "#E04F51", label: "大于6T" }
+            ];
+            
+            legendLabels.forEach(function(legendItem) {
+                var legendKey = document.createElement("div");
+                legendKey.className = "legend-key";
+                legendKey.style.backgroundColor = legendItem.color;
+                
+                var legendLabel = document.createElement("span");
+                legendLabel.textContent = legendItem.label;
+                
+                var legendEntry = document.createElement("div");
+                legendEntry.appendChild(legendKey);
+                legendEntry.appendChild(legendLabel);
+                legendContainer.appendChild(legendEntry);
+            });
+        }).catch(function(error) {
+            console.error("Error loading the GDP data:", error);
+        });
+    </script>
+</body>
+</html>

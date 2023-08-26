@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tightly Packed Draggable Bubble Chart</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+  <svg id="chart"></svg>
+
+  <script>
+    const data = [
+    { name: "China", value: 1922 },
+      { name: "Germany", value: 5062 },
+      { name: "Japan", value: 6811 },
+      { name: "Netherlands", value: 1070 },
+      { name: "South Korea", value: 250 },
+      { name: "Switzerland", value: 970 },
+      { name: "United Kingdom", value: 3372 },
+      { name: "United States", value: 17439 }, 
+      { name: "Saudi Arabia", value: 44 },
+      { name: "Singapore", value: 44 },
+      { name: "Syria", value: 2 },
+      { name: "Thailand", value: 7 },
+      { name: "Turkey", value: 60 },
+      { name: "Germany", value: 5062 }, 
+      { name: "Mexico", value: 166 },
+      { name: "Vietnam", value: 29 },
+//导入数据
+    ];
+
+    const width = 800;
+    const height = 600;
+    const svg = d3.select("#chart")
+      .attr("width", width)
+      .attr("height", height);
+
+     // 为气泡图添加标题
+     svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", 30)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "24px")
+      .text("1990年全球物理学科分工");
+
+    // 在图上添加注释
+    svg.append("text")
+      .attr("x", width - 10)
+      .attr("y", 50)
+      .attr("text-anchor", "end")
+      .attr("font-size", "16px")
+      .text("气泡的大小代表该国发布相关论文数量");
+
+    const simulation = d3.forceSimulation(data) //设定力导向布局
+      .force("charge", d3.forceManyBody().strength(-50))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.value) + 2))
+      .force("x", d3.forceX(width / 2).strength(0.012)) // 为力导向布局增加一点水平排斥力，使气泡更紧密
+      .force("y", d3.forceY(height / 2).strength(0.012)); // 为力导向布局增加一点垂直排斥力，使气泡更紧密
+
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+    const nodes = svg.selectAll(".node")
+      .data(data)
+      .enter().append("g")
+      .attr("class", "node")
+      .call(d3.drag()
+        .on("start", handleDragStart)
+        .on("drag", handleDrag)
+        .on("end", handleDragEnd))
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut);
+
+    const circles = nodes.append("circle")
+      .attr("r", d => Math.sqrt(d.value))
+      .attr("fill", (d, i) => colorScale(i))
+      .attr("opacity", 0.7);
+
+    const labels = nodes.append("text") //给气泡加上国家标签，字体颜色为黑色
+      .text(d => d.name)
+      .attr("text-anchor", "middle")
+      .attr("dy", d => Math.sqrt(d.value) + 14)
+      .attr("fill", "black");
+
+    const values = nodes.append("text") //给气泡加上数值，字体颜色为白色
+      .text(d => d.value)
+      .attr("text-anchor", "middle")
+      .attr("dy", d => 5)
+      .attr("fill", "black");
+
+    simulation.on("tick", () => {
+      nodes
+        .attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+ 
+    //为气泡图添加拖拽的交互效果
+    function handleDragStart(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function handleDrag(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function handleDragEnd(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    function handleMouseOver(event, d) {
+      
+    } //鼠标悬停交互
+
+    function handleMouseOut(event, d) {
+      // 鼠标移出交互
+    }
+  </script>
+</body>
+</html>
